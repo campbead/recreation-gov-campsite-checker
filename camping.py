@@ -10,6 +10,8 @@ from itertools import count, groupby
 
 from dateutil import rrule
 
+import pandas as pd
+
 from clients.recreation_client import RecreationClient
 from enums.date_format import DateFormat
 from enums.emoji import Emoji
@@ -61,6 +63,8 @@ def get_park_information(
     for month_date in months:
         api_data.append(RecreationClient.get_availability(park_id, month_date))
 
+    #print('-----API DATA------')
+    #print(api_data)
     # Collapse the data into the described output format.
     # Filter by campsite_type if necessary.
     data = {}
@@ -259,7 +263,27 @@ def generate_json_output(info_by_park_id):
         if current:
             has_availabilities = True
             availabilities_by_park_id[park_id] = available_dates_by_site_id
+    # add last update to diction
+    availabilities_by_park_id['last_upate'] = RecreationClient.get_update_date(park_id)
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    availabilities_by_park_id['query_time'] = now
+    print(type(availabilities_by_park_id))
+    print(availabilities_by_park_id)
+    print(' ------')
+    print(availabilities_by_park_id[234177][345440])
+    print(' ------')
 
+    avail_dates = []
+    for date in availabilities_by_park_id[234177][345440]:
+        avail_dates.append(date['start'])
+    print(avail_dates)
+
+    df = pd.DataFrame(avail_dates, columns=["available_dates"])
+    df['query_time'] = now
+    df['last_update'] = RecreationClient.get_update_date(park_id)
+
+    
+    print(df)
     return json.dumps(availabilities_by_park_id), has_availabilities
 
 

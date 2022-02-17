@@ -26,6 +26,8 @@ class RecreationClient:
         )
         url = cls.AVAILABILITY_ENDPOINT.format(park_id=park_id)
         resp = cls._send_request(url, params)
+        #print('--- RESP ----')
+        #print(resp)
         return resp
 
     @classmethod
@@ -34,6 +36,13 @@ class RecreationClient:
             cls.MAIN_PAGE_ENDPOINT.format(park_id=park_id), {}
         )
         return resp["campground"]["facility_name"]
+
+    @classmethod
+    def get_update_date(cls, park_id):
+        resp = cls._send_request(
+            cls.MAIN_PAGE_ENDPOINT.format(park_id=park_id), {}
+        )
+        return resp["campground"]["updated_date"]
 
     @classmethod
     def _send_request(cls, url, params):
