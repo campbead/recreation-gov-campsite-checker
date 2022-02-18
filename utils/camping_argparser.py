@@ -58,6 +58,11 @@ class CampingArgumentParser(argparse.ArgumentParser):
                 "avaiable dates and which sites are available."
             ),
         )
+        self.add_argument(
+            "--csv-output", 
+            type=str,
+            help="Output data to csv file"
+        )
         parks_group = self.add_mutually_exclusive_group(required=True)
         parks_group.add_argument(
             "--parks",

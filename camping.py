@@ -11,6 +11,7 @@ from itertools import count, groupby
 from dateutil import rrule
 
 import pandas as pd
+import os
 
 from clients.recreation_client import RecreationClient
 from enums.date_format import DateFormat
@@ -263,28 +264,60 @@ def generate_json_output(info_by_park_id):
         if current:
             has_availabilities = True
             availabilities_by_park_id[park_id] = available_dates_by_site_id
+    
+    
+    
     # add last update to diction
     availabilities_by_park_id['last_upate'] = RecreationClient.get_update_date(park_id)
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     availabilities_by_park_id['query_time'] = now
-    print(type(availabilities_by_park_id))
-    print(availabilities_by_park_id)
-    print(' ------')
-    print(availabilities_by_park_id[234177][345440])
-    print(' ------')
+    #print(type(availabilities_by_park_id))
+    #print(availabilities_by_park_id)
+    #print(' ------')
+    #print(availabilities_by_park_id[234177][345440])
+    #print(' ------')
 
     avail_dates = []
     for date in availabilities_by_park_id[234177][345440]:
         avail_dates.append(date['start'])
-    print(avail_dates)
+    #print(avail_dates)
 
     df = pd.DataFrame(avail_dates, columns=["available_dates"])
     df['query_time'] = now
     df['last_update'] = RecreationClient.get_update_date(park_id)
 
     
-    print(df)
+    #print(df)
     return json.dumps(availabilities_by_park_id), has_availabilities
+
+def generate_csv(info_by_park_id, output_file):
+    df = pd.DataFrame()
+    availabilities_by_park_id = {}
+    has_availabilities = False
+    for park_id, info in info_by_park_id.items():
+        current, _, available_dates_by_site_id, _ = info
+        if current:
+            has_availabilities = True
+            for site_id in available_dates_by_site_id.keys():
+                start_dates = []
+                for date in available_dates_by_site_id[site_id]:
+                    start_dates.append(date['start'])
+                temp_df = pd.DataFrame(start_dates,columns=['start_date'])
+                temp_df['site'] = site_id
+                temp_df['park'] = park_id
+                df = df.append(temp_df)
+     # add last update to diction
+    df['last_upate'] = RecreationClient.get_update_date(park_id)
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    df['query_time'] = now
+
+    #print(df)
+    if not os.path.isfile(output_file):
+        df.to_csv(output_file, header='column_names', index=False)
+    else: # else it exists so append without writing the header
+        df.to_csv(output_file, mode='a', header=False, index=False)
+
+
 
 
 def main(parks, json_output=False):
@@ -298,6 +331,13 @@ def main(parks, json_output=False):
             args.campsite_ids,
             nights=args.nights,
         )
+    
+    if len(args.csv_output) >0:
+        #print("ok csv")
+        #output, has_availabilities = generate_json_output(info_by_park_id)
+        generate_csv(info_by_park_id, args.csv_output)
+        #print(output)
+
 
     if json_output:
         output, has_availabilities = generate_json_output(info_by_park_id)
